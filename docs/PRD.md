@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Product** | Synthetic: privacy-safe synthetic data for AI, analytics and software teams |
-| **Status** | Draft v0.1 |
+| **Status** | Draft v0.2 |
 | **Owner** | Rahul Bhandari |
 | **Last updated** | 2026-10-20 |
 
@@ -40,7 +40,7 @@ Our angle is **"synthetic data that AI agents can ask for."** Engineers and AI c
 - **Regulation is tightening.** GDPR, US state privacy laws (CCPA/CPRA and others), HIPAA, and the EU AI Act's data-governance duties for high-risk AI systems all make "just copy production" harder to defend.
 - **The AI build-out needs data.** Companies building models and agents need training and evaluation data faster than governance processes can approve real data.
 - **AI agents now write and test code.** Coding agents generate tests and scaffolding all day, and they need realistic data on demand, through a tool interface rather than a web form.
-- **The market is consolidating.** Early leaders have been acquired or have open-sourced their core engines, which leaves room for a focused, self-serve, agent-first product. **[Assumption — validate with competitive research]**
+- **The market is consolidating.** Early leaders have been acquired or have open-sourced their core engines: NVIDIA acquired Gretel ([reported March 2025](https://techcrunch.com/2025/03/19/nvidia-reportedly-acquires-synthetic-data-startup-gretel/)), SAS acquired Hazy's software assets ([November 2024](https://www.sas.com/en_gb/news/press-releases/2024/november/hazy-syntheticdata.html)), KPMG agreed to acquire YData's IP and technology assets ([October 2025](https://kpmg.com/us/en/media/news/kpmg-accelerates-ai-strategy-with-ydata.html)), and Syntho acquired the MOSTLY AI brand ([June 2026](https://www.syntho.ai/syntho-acquires-mostly-ai-trademark-and-related-assets/)), after MOSTLY AI open-sourced its SDK under [Apache 2.0](https://github.com/mostly-ai/mostlyai). Details in the [competitive landscape](discovery/competitive-landscape.md) (sources accessed 2026-10-20). The opening for a self-serve, agent-native product is narrower than first assumed, because Tonic Fabricate (free and $29/month plans) and MOSTLY AI already offer MCP servers. Our room lies in schema-first, reproducible, multi-table data with compliance-ready evidence at a mid-market price. **[Assumption — validate in Phase 0 interviews; see [A01](discovery/assumptions-register.md)]**
 
 ---
 
@@ -291,7 +291,7 @@ Our angle is **"synthetic data that AI agents can ask for."** Engineers and AI c
 
 | Phase | Timeline (from kickoff) | Exit criteria |
 |---|---|---|
-| **0 — Discovery** | Weeks 0–3 | 15 customer interviews; 3 design partners signed; benchmark datasets chosen |
+| **0 — Discovery** | Weeks 0–3 | 15 customer interviews; 3 design partners signed; benchmark datasets chosen. Plan and toolkit: [docs/discovery/README.md](discovery/README.md) |
 | **1 — MVP / private beta** | Weeks 4–14 | FR1–FR11 met; 3 design partners using it weekly |
 | **2 — Public beta** | Weeks 15–22 | Self-serve billing live; activation ≥ 30%; first 20 paying workspaces |
 | **3 — GA** | Week 23+ | SOC 2 Type I; uptime target met for 30 days; Phase 2 connectors shipped |
