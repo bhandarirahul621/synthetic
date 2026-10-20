@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Synthetic — Realistic test data, zero real people</title>
+  <meta name="description" content="Synthetic generates realistic multi-table datasets with keys and business rules intact, reproducible in CI, callable from AI agents, and shipped with a privacy report. Join the early-access waitlist.">
+  <meta property="og:title" content="Synthetic — Realistic test data, zero real people">
+  <meta property="og:description" content="Multi-table synthetic data for CI and AI agents, with privacy evidence your compliance team can file. Join the waitlist.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234f46e5'/%3E%3Cpath d='M9 11h14M9 16h14M9 21h9' stroke='white' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="logo" href="/" aria-label="Synthetic home">
+        <span class="logo-mark" aria-hidden="true"></span>Synthetic
+      </a>
+      <a class="btn btn-small" href="#waitlist">Join the waitlist</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div>
+          <p class="eyebrow">Early access · Building now</p>
+          <h1>Realistic test data.<br><span class="accent">Zero real people.</span></h1>
+          <p class="lede">Synthetic generates multi-table datasets that keep your schema's keys and business rules intact. Runs are reproducible in CI, your AI coding agent can request data directly, and every dataset ships with a privacy report your compliance team can file.</p>
+          <div class="cta-row">
+            <a class="btn" href="#waitlist">Get early access</a>
+            <a class="btn btn-ghost" href="#how">See how it works</a>
+          </div>
+        </div>
+        <div class="terminal" aria-label="Example of requesting a dataset from the command line">
+          <div class="terminal-bar"><span></span><span></span><span></span></div>
+<pre><code><span class="c"># from your terminal, CI, or AI agent</span>
+<span class="p">$</span> synthetic generate \
+    --schema schema.sql \
+    --rows customers=2000,orders=50000 \
+    --scenario fraud=2% --seed 42
+
+<span class="ok">✓</span> 4 tables · 61,214 rows
+<span class="ok">✓</span> 100% foreign keys resolve
+<span class="ok">✓</span> 0 rows copied from source
+<span class="ok">✓</span> Fidelity 91/100 · Privacy checks passed
+<span class="c">→ report.pdf  data/*.parquet</span></code></pre>
+          <p class="terminal-note">Illustrative preview of the planned CLI.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="problem">
+      <div class="wrap">
+        <h2>Test data is still a bad trade-off</h2>
+        <div class="cards three">
+          <article class="card">
+            <h3>Copy production</h3>
+            <p>Realistic, but it puts customer data in staging, laptops and vendor tools. Masking a few columns doesn't stop people from being re-identified through combinations of fields.</p>
+          </article>
+          <article class="card">
+            <h3>Hand-write fixtures</h3>
+            <p>Safe, but unrealistic. Random values break joins, miss edge cases and don't look like your real distributions.</p>
+          </article>
+          <article class="card">
+            <h3>Wait for access</h3>
+            <p>Data requests for ML training or vendor sharing can take weeks, and rare events like fraud are barely in the data anyway.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt" id="how">
+      <div class="wrap">
+        <h2>How it works</h2>
+        <ol class="steps">
+          <li>
+            <span class="step-num">1</span>
+            <div>
+              <h3>Start from what you have</h3>
+              <p>Upload a SQL schema or dbt model, describe your data in plain English, or provide a sample to learn from.</p>
+            </div>
+          </li>
+          <li>
+            <span class="step-num">2</span>
+            <div>
+              <h3>Preview, then generate</h3>
+              <p>See 100 rows in seconds, adjust rules and scenarios, then generate millions of rows with a fixed seed so every run is identical.</p>
+            </div>
+          </li>
+          <li>
+            <span class="step-num">3</span>
+            <div>
+              <h3>Use it anywhere</h3>
+              <p>Download Parquet or CSV, push to Postgres, call it from CI, or let your AI coding agent request it over MCP.</p>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section" id="features">
+      <div class="wrap">
+        <h2>What we're building</h2>
+        <div class="cards two">
+          <article class="card">
+            <h3>Relational by design</h3>
+            <p>Parent tables before children, realistic rows per parent, and every declared constraint enforced, so joins and reports behave like production.</p>
+          </article>
+          <article class="card">
+            <h3>Reproducible in CI</h3>
+            <p>Versioned recipes plus seeds give byte-identical output, so tests stay stable and failures can be reproduced.</p>
+          </article>
+          <article class="card">
+            <h3>Privacy evidence, not promises</h3>
+            <p>Every dataset comes with a report: copied-row checks, distance to the closest real record, membership-inference testing, and a plain-English summary.</p>
+          </article>
+          <article class="card">
+            <h3>Built for agents and humans</h3>
+            <p>Everything in the web app is also available through the API, the CLI and an MCP server, so your coding agent can fetch the data it needs.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt" id="who">
+      <div class="wrap">
+        <h2>Who it's for</h2>
+        <div class="cards three">
+          <article class="card">
+            <h3>Data &amp; ML engineers</h3>
+            <p>Training and evaluation data today, without waiting on an access request.</p>
+          </article>
+          <article class="card">
+            <h3>Software &amp; QA engineers</h3>
+            <p>Staging that behaves like production, including the edge cases.</p>
+          </article>
+          <article class="card">
+            <h3>Privacy &amp; compliance leads</h3>
+            <p>Measurable evidence to review, instead of "trust us, it's masked."</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="waitlist">
+      <div class="wrap narrow">
+        <h2>Join the early-access waitlist</h2>
+        <p class="section-lede">We're talking with engineers and compliance leads to shape the first version. Tell us a little about your work, and we'll be in touch when early access opens.</p>
+
+        <form class="form" name="waitlist" method="POST" action="/thank-you" data-netlify="true" netlify-honeypot="bot-field">
+          <input type="hidden" name="subject" value="New Synthetic waitlist sign-up (%{submissionId})">
+          <p class="hidden"><label>Don't fill this out: <input name="bot-field"></label></p>
+
+          <div class="field-row">
+            <label class="field">
+              <span>Name</span>
+              <input type="text" name="name" autocomplete="name">
+            </label>
+            <label class="field">
+              <span>Work email <em>*</em></span>
+              <input type="email" name="email" autocomplete="email" required>
+            </label>
+          </div>
+
+          <div class="field-row">
+            <label class="field">
+              <span>Your role</span>
+              <select name="role">
+                <option value="">Select…</option>
+                <option>Data / ML engineer</option>
+                <option>Software / QA engineer</option>
+                <option>Privacy / compliance</option>
+                <option>Engineering or data leader</option>
+                <option>Student / educator</option>
+                <option>Other</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Company size</span>
+              <select name="company_size">
+                <option value="">Select…</option>
+                <option>1–50</option>
+                <option>51–200</option>
+                <option>201–1,000</option>
+                <option>1,001–5,000</option>
+                <option>5,000+</option>
+              </select>
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Industry</span>
+            <select name="industry">
+              <option value="">Select…</option>
+              <option>Fintech / banking</option>
+              <option>Insurance</option>
+              <option>Healthcare / health-tech</option>
+              <option>E-commerce / retail</option>
+              <option>SaaS / software</option>
+              <option>Education</option>
+              <option>Other</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>How do you get test or training data today, and what's painful about it?</span>
+            <textarea name="current_workflow" rows="4" placeholder="e.g., We copy a masked production snapshot into staging every month, and it takes two days of approvals."></textarea>
+          </label>
+
+          <label class="check">
+            <input type="checkbox" name="research_call" value="yes">
+            <span>I'm open to a 30-minute research call about how my team handles data today.</span>
+          </label>
+
+          <button class="btn btn-block" type="submit">Join the waitlist</button>
+          <p class="fine-print">We'll only use your details to contact you about Synthetic and its early access. No sharing, no selling. Want your details removed? Reply to any email from us.</p>
+        </form>
+      </div>
+    </section>
+
+    <section class="section alt" id="faq">
+      <div class="wrap narrow">
+        <h2>Questions</h2>
+        <details>
+          <summary>Can I use Synthetic today?</summary>
+          <p>Not yet. We're in the discovery stage, talking with teams to make sure we build the right thing. Waitlist members get early access first.</p>
+        </details>
+        <details>
+          <summary>Is synthetic data automatically "anonymous"?</summary>
+          <p>Not automatically, and anyone who says so should show their evidence. Synthetic data can still leak information if a model memorizes its source. That's why every dataset will come with measured privacy checks. Whether data counts as anonymous under GDPR, HIPAA or other laws is a legal judgment, so we give your privacy team evidence to review rather than a legal guarantee.</p>
+        </details>
+        <details>
+          <summary>Do I have to upload real data?</summary>
+          <p>No. You can generate data from a schema or a plain-English description alone. Learning from a sample is optional, for when you need closer statistical realism.</p>
+        </details>
+        <details>
+          <summary>Which databases will you support?</summary>
+          <p>Postgres first, then Snowflake, BigQuery, Databricks, MySQL and S3. Tell us what you use in the form above, because it shapes our priorities.</p>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <span><span class="logo-mark small" aria-hidden="true"></span>Synthetic</span>
+      <span>An early-stage project by Rahul Bhandari · 2026</span>
+    </div>
+  </footer>
+</body>
+</html>
