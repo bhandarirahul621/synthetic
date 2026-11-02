@@ -173,8 +173,14 @@ def _expected_shares(col: Column, rate_override: tuple[Any, float] | None) -> di
 
 
 def spec_fidelity(schema: Schema, tables: dict[str, pd.DataFrame],
-                  scenarios: list[dict] | None = None, skip: set[str] | None = None) -> dict[str, Any]:
-    """Check generated tables against what the schema (and scenarios) asked for."""
+                  scenarios: list[dict] | None = None, skip: set[str] | None = None,
+                  requested_rows: dict[str, int] | None = None) -> dict[str, Any]:
+    """Check generated tables against what the schema (and scenarios) asked for.
+
+    ``requested_rows`` lists tables whose total the caller fixed; for those the
+    children-per-parent mean is decided by the caller, not the spec, so it is
+    not scored.
+    """
     overrides = {}
     for sc in scenarios or []:
         overrides[sc["column"]] = (sc.get("value"), float(sc["rate"]))
@@ -189,7 +195,7 @@ def spec_fidelity(schema: Schema, tables: dict[str, pd.DataFrame],
             if key in skip or col.foreign_key is not None or col.primary_key:
                 continue
             per_column.append(_column_conformance(df[col.name], col, table, overrides.get(key)))
-    relationships = relationship_stats(schema, tables)
+    relationships = relationship_stats(schema, tables, fixed=set(requested_rows or {}))
     rel_scores = [r["similarity"] for r in relationships if r.get("similarity") is not None]
     scores = [c["similarity"] for c in per_column] + rel_scores
     score = float(np.mean(scores)) if scores else 1.0
@@ -225,7 +231,8 @@ def _column_conformance(series: pd.Series, col: Column, table: Table,
             "similarity": round(sim, 4), "checks": {k: round(v, 4) for k, v in parts.items()}, **detail}
 
 
-def relationship_stats(schema: Schema, tables: dict[str, pd.DataFrame]) -> list[dict[str, Any]]:
+def relationship_stats(schema: Schema, tables: dict[str, pd.DataFrame],
+                       fixed: set[str] | None = None) -> list[dict[str, Any]]:
     """Children-per-parent statistics for every foreign key (cross-table fidelity)."""
     out = []
     for rel in schema.relationships():
@@ -251,7 +258,7 @@ def relationship_stats(schema: Schema, tables: dict[str, pd.DataFrame]) -> list[
             ok_min = float((per_parent >= spec.min).mean())
             ok_max = float((per_parent <= spec.max).mean()) if spec.max is not None else 1.0
             sim = (ok_min + ok_max) / 2
-            if spec.mean:
+            if spec.mean and rel.child_table not in (fixed or set()):
                 sim = (sim + max(0.0, 1 - abs(per_parent.mean() - spec.mean) / spec.mean)) / 2
             stats_["similarity"] = round(sim, 4)
             stats_["expected"] = spec.model_dump(exclude_none=True)
