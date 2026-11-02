@@ -1,0 +1,47 @@
+# Example fintech schema (Synthetic YAML format).
+# Accounts own transactions; about 2% of transactions are fraud by default,
+# and a rare_event scenario can raise that, e.g. transactions.is_fraud at 5%.
+name: fintech
+tables:
+  - name: accounts
+    rows: 1000
+    columns:
+      - {name: id, type: uuid, primary_key: true}
+      - {name: holder_name, type: name, subtype: full, pii: true, nullable: false}
+      - {name: email, type: email, unique: true, pii: true, nullable: false}
+      - {name: country, type: address, subtype: country, nullable: false}
+      - name: account_type
+        type: category
+        allowed_values: [checking, savings, credit]
+        weights: [0.55, 0.3, 0.15]
+        nullable: false
+      - {name: opened_on, type: date, min: "2015-01-01", max: "2026-06-30", nullable: false}
+      - {name: closed_on, type: date, min: "2015-01-02", max: "2026-10-31", null_rate: 0.85}
+      - {name: credit_limit, type: float, min: 500, max: 50000, decimals: 2, distribution: lognormal, mean: 5000, null_rate: 0.6}
+    checks:
+      - closed_on > opened_on
+
+  - name: transactions
+    columns:
+      - {name: id, type: int, primary_key: true}
+      - name: account_id
+        type: uuid
+        nullable: false
+        foreign_key:
+          table: accounts
+          column: id
+          children: {distribution: negative_binomial, mean: 20, min: 1}
+      - {name: amount, type: float, min: 0.5, max: 25000, decimals: 2, distribution: lognormal, mean: 45, nullable: false}
+      - name: currency
+        type: category
+        allowed_values: [USD, EUR, GBP]
+        weights: [0.8, 0.15, 0.05]
+        nullable: false
+      - name: channel
+        type: category
+        allowed_values: [card_present, online, transfer, atm]
+        nullable: false
+      - {name: merchant, type: string, subtype: company, null_rate: 0.1}
+      - {name: is_fraud, type: bool, p_true: 0.02, nullable: false}
+      - {name: created_at, type: datetime, min: "2024-01-01T00:00:00", max: "2026-10-31T23:59:59", nullable: false}
+      - {name: note, type: text, null_rate: 0.7}
