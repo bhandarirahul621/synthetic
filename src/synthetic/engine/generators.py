@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 
 from synthetic.engine import pools
-from synthetic.engine.constraints import DAY, numeric_bounds, step
+from synthetic.engine.constraints import DAY, numeric_bounds
 from synthetic.errors import ConstraintError
 from synthetic.schema import Column, Table
 
@@ -184,6 +184,24 @@ def gen_email(col: Column, table: Table, n: int, rng: np.random.Generator) -> pd
     return pd.Series(values, dtype=object)
 
 
+def emails_from_names(first: pd.Series, last: pd.Series, unique: bool,
+                      rng: np.random.Generator) -> pd.Series:
+    """Build emails from the row's own first/last names, so they look consistent."""
+    n = len(first)
+
+    def clean(series: pd.Series) -> pd.Series:
+        return series.astype(str).str.lower().str.replace(r"[^a-z0-9]", "", regex=True)
+
+    sep = np.array([".", "_", ""], dtype=object)[rng.integers(0, 3, size=n)]
+    if unique:
+        suffix = (rng.permutation(n) + 1).astype(str).astype(object)
+    else:
+        suffix = rng.integers(1, 1000, size=n).astype(str).astype(object)
+    domain = _pick(pools.EMAIL_DOMAINS, n, rng)
+    values = clean(first).to_numpy(dtype=object) + sep + clean(last).to_numpy(dtype=object) + suffix + "@" + domain
+    return pd.Series(values, dtype=object)
+
+
 def gen_phone(col: Column, table: Table, n: int, rng: np.random.Generator) -> pd.Series:
     # 555 exchanges are reserved for fiction in North America, which lowers the
     # chance of producing a real person's number.
@@ -323,6 +341,3 @@ def apply_nulls(series: pd.Series, col: Column, rng: np.random.Generator) -> pd.
     return series.mask(mask)
 
 
-def min_step(col: Column) -> float:
-    """Re-exported for the relational orchestrator."""
-    return step(col)

@@ -37,7 +37,7 @@ from synthetic.engine.constraints import (
     step,
     validate_table,
 )
-from synthetic.engine.generators import apply_nulls, generate_column
+from synthetic.engine.generators import apply_nulls, emails_from_names, generate_column
 from synthetic.engine.ordering import topological_order
 from synthetic.engine.scenarios import Scenario, apply_rare_event, validate_scenarios
 from synthetic.engine.version import ENGINE_VERSION
@@ -268,6 +268,7 @@ def generate(
     no_copy: dict[str, Any] | None = None,
     progress: ProgressFn | None = None,
     should_cancel: Callable[[], bool] | None = None,
+    rng: np.random.Generator | None = None,
 ) -> GenerationResult:
     """Generate all tables of ``schema``.
 
@@ -283,6 +284,8 @@ def generate(
             (FR8).
         progress: callback ``(fraction 0..1, message)``.
         should_cancel: callback; return True to stop between tables.
+        rng: an existing generator to continue from (the pipeline passes the
+            one it already used for fitting); defaults to ``default_rng(seed)``.
     """
     rows = dict(rows or {})
     scenarios = list(scenarios or [])
@@ -297,7 +300,7 @@ def generate(
     validate_scenarios(schema, scenarios)
 
     order = topological_order(schema)
-    rng = np.random.default_rng(seed)
+    rng = rng if rng is not None else np.random.default_rng(seed)
     tables: dict[str, pd.DataFrame] = {}
     timings: dict[str, float] = {}
     dropped: dict[str, int] = {}
@@ -393,6 +396,8 @@ def _generate_table(table: Table, done: dict[str, pd.DataFrame], rows: dict[str,
     for col in self_refs:
         df[col.name] = _self_reference(df, table, col, rng)
 
+    _align_emails_with_names(df, table, set(modeled.columns) if modeled is not None else set(), rng)
+
     _enforce_unique_groups(df, table, driving, regenerate)
 
     for sc in scenarios:
@@ -439,6 +444,26 @@ def _resample_copies(modeled: pd.DataFrame, model: TabularModel, no_copy: Any,
         for col in modeled.columns:
             modeled.loc[idx, col] = fresh[col].to_numpy()
     return modeled
+
+
+def _align_emails_with_names(df: pd.DataFrame, table: Table, modeled: set[str],
+                             rng: np.random.Generator) -> None:
+    """If a table has first/last (or full) name columns, derive its emails from them."""
+    names = {c.subtype or "full": c.name for c in table.columns if c.type == "name" and c.name not in modeled}
+    if "first" in names and "last" in names:
+        first, last = df[names["first"]], df[names["last"]]
+    elif "full" in names:
+        parts = df[names["full"]].astype(str).str.split(" ", n=1, expand=True)
+        if parts.shape[1] < 2:
+            return
+        first, last = parts[0], parts[1].fillna("")
+    else:
+        return
+    for col in table.columns:
+        if col.type == "email" and col.name not in modeled and not col.foreign_key:
+            df[col.name] = emails_from_names(first, last, col.unique, rng)
+            if col.max_length:
+                df[col.name] = df[col.name].str.slice(0, col.max_length)
 
 
 def _self_reference(df: pd.DataFrame, table: Table, col: Column, rng: np.random.Generator) -> pd.Series:
