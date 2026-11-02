@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Product** | Synthetic: privacy-safe synthetic data for AI, analytics and software teams |
-| **Status** | Draft v0.2 |
+| **Status** | Draft v0.3 |
 | **Owner** | Rahul Bhandari |
-| **Last updated** | 2026-10-20 |
+| **Last updated** | 2026-11-02 |
 
 > **How to read this document.** Sections 1–4 explain *why* the product should exist. Sections 5–8 explain *what* we will build. Sections 9–12 explain *how* we will build it, measure it and manage the risks. Anything marked **[Assumption]** is a hypothesis we still need to check with real customers.
 
@@ -192,6 +192,10 @@ Our angle is **"synthetic data that AI agents can ask for."** Engineers and AI c
 | FR9 | API/SDK/MCP | Every MVP action is available through the REST API; the MCP server passes the MCP conformance tests |
 | FR10 | Reproducibility | Same recipe + seed + engine version gives byte-identical output |
 | FR11 | Data deletion | Uploaded source data is deleted within 24 h of job completion by default (configurable to 0–30 days) |
+| FR12 | API contract | A published OpenAPI spec covers 100% of MVP endpoints (§9.1.3); the SDK and MCP tools are generated from it and pass contract tests against it |
+| FR13 | Async jobs and webhooks | `POST /v1/datasets` responds in under 500 ms (p95) with `202`; webhooks are delivered within 30 s of job completion, signed, and retried with backoff for 24 h |
+| FR14 | Safe retries and errors | Repeating a `POST` with the same `Idempotency-Key` within 24 h never creates a second job; every error uses the §9.1.5 format with a `request_id` |
+| FR15 | API security | Keys are stored hashed and scoped; a key without the needed scope gets `403`; no source-data values appear in API logs, errors or webhooks (verified by automated log scanning) |
 
 ### 8.1 Non-functional requirements
 - **Security:** encryption in transit (TLS 1.2+) and at rest; isolated job workers; source data never used to train shared models.
@@ -234,6 +238,115 @@ Our angle is **"synthetic data that AI agents can ask for."** Engineers and AI c
 - **Build vs. buy:** start with proven open-source tabular synthesis libraries, wrapped behind our own engine interface so models can be swapped out; build the relational orchestrator and the evaluator ourselves, because that is where we differentiate.
 - **LLM use:** schema planning and text fields only. Numbers and statistical structure come from statistical models, which are more faithful and cheaper.
 
+### 9.1 Public API
+
+> **What an API is.** An API (Application Programming Interface) lets *programs* use Synthetic the way the web app lets *people* use it. Scripts, CI pipelines, the SDK, the CLI and AI agents (through MCP) all talk to the same API. This makes the API the product's core, not an add-on.
+
+#### 9.1.1 Design principles
+1. **API-first:** the web app is built on the same public API. Anything a user can click, a program can call (G4, FR9).
+2. **REST + JSON over HTTPS**, versioned in the URL (`/v1/...`). The **OpenAPI** spec is the source of truth; docs, SDK and MCP tools are generated from it.
+3. **Asynchronous jobs:** generation can take minutes, so it returns a job immediately and the caller polls or receives a webhook, instead of holding a connection open.
+4. **Safe retries:** every `POST` accepts an `Idempotency-Key` header, so a retried request never creates a duplicate job.
+5. **Deterministic:** recipe + seed + engine version always gives the same output (FR10). The engine version is returned on every job.
+6. **Privacy by default:** source-data uploads go straight to storage through short-lived signed URLs; their contents never appear in API logs, error messages or webhooks.
+
+#### 9.1.2 Authentication and access
+- **API keys** per workspace, created and revoked in the web app. Two kinds: `sk_test_…` (sandbox, small row limits, free) and `sk_live_…` (production, billed). Keys are shown once and stored hashed.
+- **Scopes:** `datasets:read`, `datasets:write`, `recipes:write`, `uploads:write`, `admin`. A CI key typically gets only `datasets:write` and `recipes:read`.
+- **MCP clients** sign in with OAuth, so a user approves an AI agent's access in the browser instead of pasting a key.
+- Phase 2: SSO-managed keys and audit logs of every API call (§6.2).
+
+#### 9.1.3 Core resources and endpoints (MVP)
+
+| Resource | Endpoint | What it does |
+|---|---|---|
+| **Schemas** | `POST /v1/schemas` | Create a schema from SQL DDL, dbt, JSON/YAML, or a natural-language `prompt` (FR1, FR2) |
+| | `GET /v1/schemas/{id}` · `PATCH /v1/schemas/{id}` | Read or edit tables, columns, relationships, constraints and PII flags |
+| **Uploads** | `POST /v1/uploads` | Get a signed URL to upload a CSV/Parquet sample (FR3); returns an `upload_id` |
+| **Previews** | `POST /v1/previews` | Return up to 100 rows synchronously, in under 10 s (FR5) |
+| **Datasets (jobs)** | `POST /v1/datasets` | Start a generation job; returns `202 Accepted` with a `dataset_id` |
+| | `GET /v1/datasets/{id}` | Job status: `queued` → `running` → `succeeded` / `failed`, plus progress % |
+| | `GET /v1/datasets/{id}/files` | Signed download links per table and format (CSV, Parquet, JSON, SQL) |
+| | `POST /v1/datasets/{id}/deliveries` | Push output to a connected database (Postgres in MVP, F5) |
+| | `DELETE /v1/datasets/{id}` | Delete outputs and any linked source data now (FR11) |
+| **Reports** | `GET /v1/datasets/{id}/report` | Fidelity and Privacy Report as JSON; `?format=pdf` for the PDF (FR7) |
+| **Recipes** | `POST /v1/recipes` · `GET /v1/recipes` · `GET /v1/recipes/{id}/versions` | Save and version generation configs for reuse in CI (U8) |
+| **Webhooks** | `POST /v1/webhooks` | Subscribe to `dataset.succeeded`, `dataset.failed`, `report.ready` |
+| **Usage** | `GET /v1/usage` | Rows generated this billing period vs. plan limit |
+
+#### 9.1.4 Example: generate a dataset
+
+```http
+POST /v1/datasets
+Authorization: Bearer sk_live_…
+Idempotency-Key: 6f1c…
+Content-Type: application/json
+
+{
+  "schema_id": "sch_8Kq2",
+  "rows": { "customers": 2000, "orders": 50000 },
+  "scenarios": [{ "type": "rare_event", "column": "orders.is_fraud", "rate": 0.02 }],
+  "seed": 42,
+  "formats": ["parquet"]
+}
+```
+
+```http
+HTTP/1.1 202 Accepted
+
+{
+  "id": "ds_3Fz9",
+  "status": "queued",
+  "engine_version": "2026.11.0",
+  "links": { "self": "/v1/datasets/ds_3Fz9", "report": "/v1/datasets/ds_3Fz9/report" }
+}
+```
+
+#### 9.1.5 Errors
+One error format everywhere, with standard HTTP status codes:
+
+```json
+{ "error": { "type": "invalid_request", "code": "fk_target_missing",
+  "message": "orders.customer_id references customers.id, but table 'customers' is not in the schema.",
+  "param": "schema_id", "request_id": "req_91aB" } }
+```
+
+Main statuses: `400` invalid request, `401` bad key, `403` missing scope, `404` not found, `409` idempotency conflict, `422` schema or constraint can't be satisfied, `429` rate limit, `5xx` our fault (safe to retry with the same idempotency key). Messages explain the fix in plain English.
+
+#### 9.1.6 Rate limits and quotas
+
+| Plan | Requests / minute | Concurrent jobs | Rows / month |
+|---|---|---|---|
+| Free (`sk_test_` and `sk_live_`) | 60 | 1 | 100k |
+| Pro | 300 | 3 | 5M |
+| Team | 1,000 | 10 | Contracted + usage |
+| Enterprise | Custom | Custom | Custom |
+
+Limits are returned in `RateLimit-*` response headers. Quotas follow §11 pricing and are **[Assumption]** until beta usage data exists.
+
+#### 9.1.7 SDK, CLI and MCP on top of the API
+All three are thin wrappers over the same endpoints, so they never drift apart:
+
+| Surface | Example | Maps to |
+|---|---|---|
+| **Python SDK** | `synthetic.datasets.create(schema_id=…, rows={…}, seed=42).wait()` | `POST /v1/datasets` + polling |
+| **CLI** | `synthetic generate --recipe orders --rows 10000` | `POST /v1/datasets` with a recipe |
+| **MCP server** | tools `create_schema`, `preview`, `create_dataset`, `get_report`, `list_recipes` | the matching endpoints |
+| **GitHub Action** (Phase 2) | `uses: synthetic/generate@v1` | CLI |
+
+MCP tools return small previews and links, never full datasets, so agent context windows stay small.
+
+#### 9.1.8 Versioning and change policy
+- Additive changes (new fields, endpoints, enum values) ship without a version bump; clients must ignore unknown fields.
+- Breaking changes require `/v2`. `/v1` stays supported for at least 12 months after `/v2` launches, with `Deprecation` and `Sunset` headers and email notice.
+- A public changelog lists every API change.
+
+#### 9.1.9 Phase 0 demo API (before the real product)
+To make the landing page and interviews more concrete, a small **demo endpoint** can run as a Netlify Function (serverless: code that runs only when called, with no server to manage):
+- `POST /api/demo/generate` takes a built-in schema (`customers` + `orders`) and a row count up to 50, and returns JSON rows with valid foreign keys.
+- No sign-up, no uploads, no real data, no privacy report. It is clearly labeled **demo**, rate-limited per IP, and never presented as the product.
+- **Purpose:** let visitors and interviewees *try* the idea, and measure interest (demo calls per visitor). It is a Phase 0 learning tool and is thrown away when the real API ships.
+
 ---
 
 ## 10. Success metrics
@@ -250,6 +363,7 @@ Our angle is **"synthetic data that AI agents can ask for."** Engineers and AI c
 | Quality | Median fidelity score on benchmark datasets | ≥ 85 / 100 |
 | Trust | % of jobs passing all privacy checks | ≥ 98% |
 | Agent adoption | % of generation jobs started via API/SDK/MCP | ≥ 30% |
+| Developer activation | Median time from creating an API key to the first successful dataset via API | < 5 min |
 | Retention | Week-4 retention of activated users | ≥ 25% |
 | Revenue | Free-to-paid conversion of activated workspaces | ≥ 4% |
 
@@ -291,8 +405,8 @@ Our angle is **"synthetic data that AI agents can ask for."** Engineers and AI c
 
 | Phase | Timeline (from kickoff) | Exit criteria |
 |---|---|---|
-| **0 — Discovery** | Weeks 0–3 | 15 customer interviews; 3 design partners signed; benchmark datasets chosen. Plan and toolkit: [docs/discovery/README.md](discovery/README.md) |
-| **1 — MVP / private beta** | Weeks 4–14 | FR1–FR11 met; 3 design partners using it weekly |
+| **0 — Discovery** | Weeks 0–3 | 15 customer interviews; 3 design partners signed; benchmark datasets chosen. Plan and toolkit: [docs/discovery/README.md](discovery/README.md). Optional: demo API (§9.1.9) |
+| **1 — MVP / private beta** | Weeks 4–14 | FR1–FR15 met; 3 design partners using it weekly, at least 1 of them through the API or MCP |
 | **2 — Public beta** | Weeks 15–22 | Self-serve billing live; activation ≥ 30%; first 20 paying workspaces |
 | **3 — GA** | Week 23+ | SOC 2 Type I; uptime target met for 30 days; Phase 2 connectors shipped |
 
@@ -318,3 +432,11 @@ Our angle is **"synthetic data that AI agents can ask for."** Engineers and AI c
 - **MCP (Model Context Protocol):** an open standard that lets AI assistants call external tools and data sources.
 - **Foreign key:** a column that links a row in one table to a row in another, e.g., `orders.customer_id → customers.id`.
 - **Recipe:** a saved, versioned configuration for generating a dataset.
+- **API (Application Programming Interface):** the way programs, rather than people, use a product.
+- **REST API / endpoint:** a REST API organizes the product into resources reached by URLs; each URL + HTTP method (e.g., `POST /v1/datasets`) is an endpoint.
+- **API key:** a secret string that identifies which workspace is calling the API.
+- **Webhook:** a message our server sends to the customer's server when something happens, such as a job finishing.
+- **Idempotency key:** a unique ID on a request, so sending it twice by accident only does the work once.
+- **Rate limit:** the maximum number of requests allowed per time window, which protects the service from overload.
+- **OpenAPI:** a standard file format that describes every endpoint of an API, used to generate docs and SDKs.
+- **Serverless function:** code a hosting platform runs only when it is called, with no server for us to manage.
