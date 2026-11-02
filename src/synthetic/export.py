@@ -105,6 +105,17 @@ def _json_default(v: Any) -> Any:
     raise TypeError(type(v).__name__)
 
 
+def frame_records(df: pd.DataFrame, table: Table | None = None) -> list[dict[str, Any]]:
+    """Rows as JSON-ready dicts (dates as text, booleans as true/false, nulls as None)."""
+    frame = _display_frame(df, table)
+    for name in df.columns:
+        if pd.api.types.is_bool_dtype(df[name]):
+            frame[name] = df[name].astype(object)
+    frame = frame.astype(object).where(frame.notna(), None)
+    records = frame.to_dict(orient="records")
+    return json.loads(json.dumps(records, default=_json_default))
+
+
 def write_json(df: pd.DataFrame, path: Path, table: Table | None = None) -> None:
     """A JSON array of row objects (booleans as JSON true/false, nulls as null)."""
     frame = _display_frame(df, table)
