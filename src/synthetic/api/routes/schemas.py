@@ -51,7 +51,7 @@ def _schema_from_body(request: Request, body: SchemaCreate, principal: Principal
                            type="schema_error") from None
         return schema, "yaml"
     if source == "prompt":
-        planner = ctx(request).settings.extra.get("planner")
+        planner = ctx(request).planner
         if planner is None:
             raise APIError(
                 501, "planner_not_configured",

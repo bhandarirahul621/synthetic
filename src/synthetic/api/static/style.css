@@ -1,0 +1,34 @@
+:root { --fg: #202124; --muted: #5f6368; --line: #dadce0; --accent: #1a73e8; --bg: #fff; --soft: #f1f3f4; }
+* { box-sizing: border-box; }
+body { margin: 0; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--fg); background: var(--bg); }
+header, main, footer { max-width: 1040px; margin: 0 auto; padding: 0 1rem; }
+header { padding-top: 1.5rem; }
+h1 { margin: 0; font-size: 1.7rem; }
+h2 { font-size: 1.15rem; margin: 0 0 .75rem; }
+.tagline, .hint { color: var(--muted); margin: .25rem 0 0; }
+section { border: 1px solid var(--line); border-radius: 8px; padding: 1rem 1.25rem; margin: 1rem 0; }
+label { display: block; font-weight: 600; margin: .25rem 0; }
+fieldset label { display: inline-block; font-weight: 400; margin-right: .75rem; }
+fieldset { border: 1px solid var(--line); border-radius: 6px; }
+input, select, textarea { font: inherit; padding: .45rem .6rem; border: 1px solid var(--line); border-radius: 6px; width: 100%; }
+textarea { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; }
+input[type=checkbox] { width: auto; }
+.row { display: flex; gap: .5rem; align-items: center; margin-top: .5rem; flex-wrap: wrap; }
+.row label { margin: 0; }
+.row select { width: auto; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .75rem; }
+button { font: inherit; padding: .5rem 1rem; border-radius: 6px; border: 1px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer; }
+button.secondary { background: #fff; color: var(--accent); }
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3px solid #8ab4f8; outline-offset: 1px; }
+button:disabled { opacity: .5; cursor: wait; }
+.out { margin-top: .75rem; }
+.error { color: #c5221f; }
+progress { width: 100%; height: 1rem; margin-top: .5rem; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; margin: .5rem 0 1rem; }
+th, td { border-bottom: 1px solid var(--line); padding: 4px 6px; text-align: left; white-space: nowrap; }
+.table-wrap { overflow-x: auto; }
+.badge { color: #fff; border-radius: 4px; padding: 1px 8px; font-size: .8rem; }
+.pass { background: #137333; } .warn { background: #b06000; } .fail { background: #c5221f; } .not_applicable { background: #5f6368; }
+.summary { background: var(--soft); padding: .75rem 1rem; border-radius: 6px; }
+footer { color: var(--muted); padding-bottom: 2rem; }
+a { color: var(--accent); }

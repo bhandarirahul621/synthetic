@@ -15,6 +15,7 @@ import secrets
 from dataclasses import dataclass
 
 from fastapi import Depends, Request
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from synthetic.api.errors import APIError
 from synthetic.api.ids import new_id, now
@@ -83,7 +84,11 @@ class Principal:
         return action == "read" and f"{resource}:write" in self.scopes
 
 
-def authenticate(request: Request) -> Principal:
+_bearer = HTTPBearer(auto_error=False, description="An API key: sk_test_... or sk_live_...")
+
+
+def authenticate(request: Request,
+                 _credentials: HTTPAuthorizationCredentials | None = Depends(_bearer)) -> Principal:
     """Resolve the ``Authorization: Bearer sk_...`` header and apply the rate limit."""
     header = request.headers.get("authorization", "")
     scheme, _, token = header.partition(" ")

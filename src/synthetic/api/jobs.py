@@ -56,6 +56,7 @@ class AppContext:
     blobs: BlobStore
     dispatcher: WebhookDispatcher
     runner: JobRunner | None = None
+    planner: Any = None  # a SchemaPlanner (FR1), or None when not configured
 
 
 class JobRunner:

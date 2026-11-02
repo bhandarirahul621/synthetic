@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Synthetic</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+  <h1>Synthetic</h1>
+  <p class="tagline">Privacy-safe synthetic data. This page uses the same public API as the SDK, CLI and MCP server.</p>
+</header>
+
+<main>
+  <section aria-labelledby="key-h">
+    <h2 id="key-h">1. API key</h2>
+    <label for="api-key">Paste an API key (stored only in this browser tab)</label>
+    <div class="row">
+      <input id="api-key" type="password" autocomplete="off" placeholder="sk_test_…">
+      <button id="save-key" type="button">Use key</button>
+    </div>
+    <p class="hint">Create one with <code>synthetic keys create --scopes admin</code>.</p>
+  </section>
+
+  <section aria-labelledby="schema-h">
+    <h2 id="schema-h">2. Schema</h2>
+    <label for="ddl">SQL DDL (CREATE TABLE statements)</label>
+    <textarea id="ddl" rows="12" spellcheck="false"></textarea>
+    <div class="row">
+      <label for="dialect">Dialect</label>
+      <select id="dialect"><option value="postgres">Postgres</option><option value="mysql">MySQL</option></select>
+      <button id="load-example" type="button" class="secondary">Load e-commerce example</button>
+      <button id="create-schema" type="button">Create schema</button>
+    </div>
+    <div id="schema-out" class="out" aria-live="polite"></div>
+  </section>
+
+  <section aria-labelledby="gen-h">
+    <h2 id="gen-h">3. Preview and generate</h2>
+    <div class="grid">
+      <div><label for="rows">Rows per table</label><input id="rows" value="customers=2000,orders=50000"></div>
+      <div><label for="seed">Seed</label><input id="seed" type="number" value="42" min="0"></div>
+      <div><label for="scenario">Rare event (optional)</label><input id="scenario" placeholder="orders.is_fraud=0.02"></div>
+      <fieldset><legend>Formats</legend>
+        <label><input type="checkbox" name="fmt" value="csv" checked> CSV</label>
+        <label><input type="checkbox" name="fmt" value="parquet"> Parquet</label>
+        <label><input type="checkbox" name="fmt" value="json"> JSON</label>
+        <label><input type="checkbox" name="fmt" value="sql"> SQL</label>
+      </fieldset>
+    </div>
+    <div class="row">
+      <button id="preview" type="button" class="secondary">Preview 10 rows</button>
+      <button id="generate" type="button">Generate dataset</button>
+    </div>
+    <div id="status" class="out" aria-live="polite"></div>
+    <progress id="progress" max="100" value="0" hidden></progress>
+    <div id="preview-out"></div>
+  </section>
+
+  <section aria-labelledby="report-h">
+    <h2 id="report-h">4. Report and files</h2>
+    <div id="report-out" class="out" aria-live="polite"><p class="hint">Generate a dataset to see its Fidelity and Privacy Report.</p></div>
+    <ul id="files"></ul>
+  </section>
+</main>
+
+<footer><a href="/docs">API docs (OpenAPI)</a></footer>
+<script src="/static/app.js"></script>
+</body>
+</html>

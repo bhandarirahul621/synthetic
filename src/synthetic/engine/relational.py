@@ -252,6 +252,47 @@ def _repair_ordered_pair(df: pd.DataFrame, table: Table, left_name: str, op: str
 # ---------------------------------------------------------------------------
 
 
+def _unique_capacity(table: Table, driving: Column, done: dict[str, pd.DataFrame]) -> int | None:
+    """Max children per parent allowed by a composite key such as (order_id, product_id).
+
+    Each order can contain each product only once, so an order can have at
+    most as many items as there are products.
+    """
+    groups = list(table.unique_together)
+    if len(table.primary_key) > 1:
+        groups.append(table.primary_key)
+    best: int | None = None
+    for group in groups:
+        if driving.name not in group:
+            continue
+        capacity = 1
+        for name in group:
+            if name == driving.name:
+                continue
+            col = table.column(name)
+            if col.foreign_key is not None and col.foreign_key.table in done:
+                capacity *= int(done[col.foreign_key.table][col.foreign_key.column].nunique())
+            elif col.type == "category" and col.allowed_values:
+                capacity *= len(col.allowed_values)
+            elif col.type == "bool":
+                capacity *= 2
+            else:
+                capacity = -1  # effectively unbounded
+                break
+        if capacity >= 0:
+            best = capacity if best is None else min(best, capacity)
+    return best
+
+
+def _cap_children(spec: ChildCount | None, cap: int | None) -> ChildCount | None:
+    if cap is None:
+        return spec
+    spec = spec or ChildCount()
+    if spec.max is not None and spec.max <= cap:
+        return spec
+    return spec.model_copy(update={"max": cap, "min": min(spec.min, cap)})
+
+
 def _driving_fk(table: Table) -> Column | None:
     """The foreign key that decides row counts: the first one with ``children``, else the first."""
     fks = [c for c in table.foreign_keys if c.foreign_key and c.foreign_key.table != table.name]
@@ -344,7 +385,8 @@ def _generate_table(table: Table, done: dict[str, pd.DataFrame], rows: dict[str,
         fk = driving.foreign_key
         assert fk is not None
         parent_keys = done[fk.table][fk.column].dropna().reset_index(drop=True)
-        counts = allocate_children(len(parent_keys), fk.children, rows.get(table.name), rng,
+        spec = _cap_children(fk.children, _unique_capacity(table, driving, done))
+        counts = allocate_children(len(parent_keys), spec, rows.get(table.name), rng,
                                    where=f"{table.name}.{driving.name}")
         n = int(counts.sum())
     else:

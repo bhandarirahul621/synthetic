@@ -51,7 +51,8 @@ def create_key(body: KeyCreate, request: Request, principal: Principal = Depends
         if payload["key"] is None:
             payload["note"] = "This key was already created by an earlier request with the same " \
                               "Idempotency-Key. Its secret is shown only once."
-    return JSONResponse(payload, status_code=response.status_code, headers=dict(response.headers))
+    replay = {"Idempotent-Replayed": "true"} if response.headers.get("idempotent-replayed") else None
+    return JSONResponse(payload, status_code=response.status_code, headers=replay)
 
 
 @router.get("/keys", summary="List API keys")
