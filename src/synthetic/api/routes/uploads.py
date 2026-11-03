@@ -18,8 +18,8 @@ from synthetic.api.auth import Principal, require
 from synthetic.api.blobs import BlobTooLarge
 from synthetic.api.deps import ctx, load
 from synthetic.api.errors import APIError
-from synthetic.api.ids import new_id
 from synthetic.api.idempotency import run_idempotent
+from synthetic.api.ids import new_id
 from synthetic.api.serializers import upload_out
 from synthetic.engine.fit import detect_column, read_sample
 

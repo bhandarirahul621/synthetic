@@ -103,6 +103,13 @@ def install_error_handlers(app: FastAPI) -> None:
                               "Idempotency-Key.")
 
 
+def _safe_path(path: str) -> str:
+    """Signed download tokens are credentials: never write them to the log."""
+    if path.startswith("/v1/files/"):
+        return "/v1/files/[redacted]"
+    return path
+
+
 class RequestContextMiddleware(BaseHTTPMiddleware):
     """Assign a request ID, add rate-limit headers, and write one access-log line per request.
 
@@ -121,7 +128,7 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
             response.headers["RateLimit-Remaining"] = str(limit[1])
             response.headers["RateLimit-Reset"] = str(limit[2])
         log.info("request method=%s path=%s status=%s duration_ms=%.1f request_id=%s key_id=%s",
-                 request.method, request.url.path, response.status_code,
+                 request.method, _safe_path(request.url.path), response.status_code,
                  (time.perf_counter() - started) * 1000, request.state.request_id,
                  getattr(request.state, "key_id", None))
         return response

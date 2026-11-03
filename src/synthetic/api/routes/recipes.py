@@ -14,8 +14,8 @@ from fastapi import APIRouter, Depends, Request
 
 from synthetic.api.auth import Principal, require
 from synthetic.api.deps import ctx, load
-from synthetic.api.ids import new_id, now
 from synthetic.api.idempotency import run_idempotent
+from synthetic.api.ids import new_id, now
 from synthetic.api.models import RecipeCreate
 from synthetic.api.serializers import recipe_out
 from synthetic.engine.scenarios import validate_scenarios

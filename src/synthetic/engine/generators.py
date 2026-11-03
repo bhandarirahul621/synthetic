@@ -273,7 +273,8 @@ def gen_string(col: Column, table: Table, n: int, rng: np.random.Generator) -> p
         values = (_pick(pools.make_pool("adjective", rng), n, rng) + " "
                   + _pick(pools.make_pool("noun", rng), n, rng))
     elif sub == "username":
-        values = _pick(pools.make_pool("username", rng), n, rng) + rng.integers(1, 100, size=n).astype(str).astype(object)
+        suffix = rng.integers(1, 100, size=n).astype(str).astype(object)
+        values = _pick(pools.make_pool("username", rng), n, rng) + suffix
     else:
         length = min(col.max_length or 10, 10)
         codes = _ALNUM[rng.integers(0, len(_ALNUM), size=(n, length))]

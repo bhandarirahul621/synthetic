@@ -18,7 +18,7 @@ from sqlglot import exp
 from sqlglot.errors import ParseError
 
 from synthetic.errors import DDLParseError
-from synthetic.schema import CheckConstraint, Column, ForeignKey, Schema, Table
+from synthetic.schema import CheckConstraint, Column, Schema, Table
 from synthetic.semantics import infer_semantic
 
 log = logging.getLogger(__name__)
@@ -447,6 +447,8 @@ def _finish_table(draft: _TableDraft, drafts: dict[str, _TableDraft], warnings: 
             warnings.append(f"Table '{draft.name}': CHECK refers to unknown column '{raw['name']}'.")
             continue
         _apply_semantics(raw, draft)
+        if raw.get("type") == "string" and raw.get("allowed_values"):
+            raw["type"] = "category"
         precision_max = raw.pop("_precision_max", None)
         if precision_max is not None and raw.get("max") is None:
             raw["max"] = precision_max

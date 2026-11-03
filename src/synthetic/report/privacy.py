@@ -22,7 +22,10 @@ category adds the same distance as a full-range numeric difference).
 Known limits (documented for the red-team review): these are distance-based
 heuristics on the learned columns only; they do not prove anonymity, do not
 model attackers with auxiliary data about quasi-identifiers, and use a random
-subset of at most ``PRIVACY_MAX_ROWS`` rows per side.
+subset of at most ``PRIVACY_MAX_ROWS`` rows per side. The DCR "closer share"
+compares against a training subset the size of the holdout, which dilutes it
+when only part of the training set was copied; the DCR ratio and the MIA are
+the stronger memorisation signals.
 """
 
 from __future__ import annotations

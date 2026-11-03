@@ -10,12 +10,12 @@ from fastapi import APIRouter, Depends, Request
 from synthetic.api.auth import Principal, require
 from synthetic.api.deps import ctx, load, parse_schema
 from synthetic.api.errors import APIError
-from synthetic.api.ids import new_id
 from synthetic.api.idempotency import run_idempotent
+from synthetic.api.ids import new_id
 from synthetic.api.models import SchemaCreate, SchemaPatch
 from synthetic.api.planner import MAX_TABLES
 from synthetic.api.serializers import schema_out
-from synthetic.ddl import parse_ddl, parse_dbt_yaml
+from synthetic.ddl import parse_dbt_yaml, parse_ddl
 from synthetic.engine.fit import infer_table, read_sample
 from synthetic.schema import Schema
 
